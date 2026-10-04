@@ -5,7 +5,7 @@ from docx.shared import Pt
 import google.generativeai as genai
 import streamlit as st
 
-# Cấu hình giao diện Streamlit (Đã sửa tham số chuẩn: page_title)
+# Cấu hình giao diện Streamlit
 st.set_page_config(
     page_title="Hệ Thống Soạn Giáo Án AI - GDPT 2018",
     page_icon="📚",
@@ -106,7 +106,10 @@ with col_tc2:
 # NÚT BẤM KÍCH HOẠT SOẠN GIÁO ÁN
 if st.button("🚀 SOẠN GIÁO ÁN TÍCH HỢP TỰ ĐỘNG", type="primary"):
     if not api_key:
-        st.error("Chưa phát hiện API Key trong phần Secrets! Vui lòng kiểm tra lại cấu hình.")
+        st.error(
+            "Chưa phát hiện API Key trong phần Secrets! Vui lòng kiểm tra lại"
+            " cấu hình."
+        )
     else:
         with st.spinner("AI đang soạn thảo Kế hoạch bài dạy chi tiết..."):
             prompt = f"""
@@ -128,7 +131,8 @@ if st.button("🚀 SOẠN GIÁO ÁN TÍCH HỢP TỰ ĐỘNG", type="primary"):
             III. TIẾN TRÌNH DẠY HỌC (Đủ 4 hoạt động: Mở đầu, Hình thành kiến thức, Luyện tập - bám sát SGK, Vận dụng tích hợp AI/Google Maps). Mỗi hoạt động trình bày rõ ràng 4 bước: Bước 1 Chuyển giao, Bước 2 Thực hiện, Bước 3 Báo cáo, Bước 4 Kết luận.
             """
 
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            # Sửa model thành gemini-1.5-flash chuẩn
+            model = genai.GenerativeModel("gemini-1.5-flash")
             response = model.generate_content(prompt)
             plan_text = response.text
 
@@ -164,6 +168,8 @@ if st.button("🚀 SOẠN GIÁO ÁN TÍCH HỢP TỰ ĐỘNG", type="primary"):
                 label="📥 TẢI FILE WORD (.DOCX) VỀ MÁY TÍNH",
                 data=bio.getvalue(),
                 file_name=f"GiaoAn_{ten_bai.replace(' ', '_')}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                mime=(
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                ),
                 type="primary",
             )
