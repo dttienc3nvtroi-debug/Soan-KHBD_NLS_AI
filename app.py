@@ -1,29 +1,25 @@
 import io
 import docx
-from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 import google.generativeai as genai
 import streamlit as st
 
-# Cấu hình giao diện Streamlit
+# Cấu hình giao diện Streamlit (Đã sửa tham số chuẩn: page_title)
 st.set_page_config(
-    page_config_title="Hệ Thống Soạn Giáo Án AI - GDPT 2018",
+    page_title="Hệ Thống Soạn Giáo Án AI - GDPT 2018",
     page_icon="📚",
     layout="wide",
 )
 
-st.title("📚 HỆ THỐNG SOẠN GIÁO ÁN TÍCH HỢP AI & NĂNG LỰC SỐ - DƯƠNG TẤN TIẾN")
+st.title("📚 HỆ THỐNG SOẠN GIÁO ÁN TÍCH HỢP AI & NĂNG LỰC SỐ")
 st.caption(
     "Chuẩn Công văn 5512/2345 & Tích hợp Giáo dục AI (QĐ 2422/QĐ-BGDĐT & CV"
     " 5588/BGDĐT-GDPT)"
 )
 
-# Lấy API Key từ Secrets hoặc cho phép nhập
+# Lấy API Key từ Secrets
 api_key = st.secrets.get("GEMINI_API_KEY", "")
-if not api_key:
-    api_key = st.sidebar.text_input(
-        "Nhập API Key Gemini:", type="password", help="Lấy tại aistudio.google.com"
-    )
 
 if api_key:
     genai.configure(api_key=api_key)
@@ -71,17 +67,12 @@ use_custom_objectives = st.checkbox(
     "📌 Cung cấp Mục tiêu / Yêu cầu cần đạt chuẩn (Kiến thức, Năng lực, Phẩm"
     " chất)",
     value=True,
-    help=(
-        "Đánh dấu vào đây để tự nhập chính xác Yêu cầu cần đạt theo SGK hoặc"
-        " Tổ chuyên môn"
-    ),
 )
 
 custom_objectives_text = ""
 if use_custom_objectives:
     custom_objectives_text = st.text_area(
-        "Dán/Nhập trực tiếp Mục tiêu bài học vào đây (AI sẽ giữ nguyên 100% nội"
-        " dung này vào giáo án):",
+        "Dán/Nhập trực tiếp Mục tiêu bài học vào đây:",
         height=180,
         value="""1. Kiến thức:
 - Nhận biết và định nghĩa được giá trị lượng giác (sin, cos, tan, cot) của một góc từ 0° đến 180° trên nửa đường tròn đơn vị.
@@ -115,7 +106,7 @@ with col_tc2:
 # NÚT BẤM KÍCH HOẠT SOẠN GIÁO ÁN
 if st.button("🚀 SOẠN GIÁO ÁN TÍCH HỢP TỰ ĐỘNG", type="primary"):
     if not api_key:
-        st.error("Vui lòng nhập API Key Gemini để tiếp tục!")
+        st.error("Chưa phát hiện API Key trong phần Secrets! Vui lòng kiểm tra lại cấu hình.")
     else:
         with st.spinner("AI đang soạn thảo Kế hoạch bài dạy chi tiết..."):
             prompt = f"""
@@ -146,7 +137,6 @@ if st.button("🚀 SOẠN GIÁO ÁN TÍCH HỢP TỰ ĐỘNG", type="primary"):
 
             # TẠO FILE WORD ĐỂ TẢI VỀ
             doc = docx.Document()
-            # Cấu hình Header
             table = doc.add_table(rows=1, cols=2)
             hdr_cells = table.rows[0].cells
             hdr_cells[0].text = f"TRƯỜNG: {truong.upper()}\nTỔ: {to.upper()}"
@@ -167,7 +157,6 @@ if st.button("🚀 SOẠN GIÁO ÁN TÍCH HỢP TỰ ĐỘNG", type="primary"):
 
             doc.add_paragraph(plan_text)
 
-            # Xuất file ra bộ nhớ tạm
             bio = io.BytesIO()
             doc.save(bio)
 
