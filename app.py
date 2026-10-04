@@ -131,7 +131,7 @@ II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU (GV & HS)
 III. TIẾN TRÌNH DẠY HỌC (Đủ 4 hoạt động: Mở đầu, Hình thành kiến thức, Luyện tập - bám sát SGK, Vận dụng tích hợp AI/Google Maps). Mỗi hoạt động trình bày rõ ràng 4 bước: Bước 1 Chuyển giao, Bước 2 Thực hiện, Bước 3 Báo cáo, Bước 4 Kết luận.
 """.strip()
 
-                model = genai.GenerativeModel("gemini-1.5-flash")
+                model = genai.GenerativeModel("gemini-pro")
                 response = model.generate_content(prompt)
                 plan_text = response.text
 
