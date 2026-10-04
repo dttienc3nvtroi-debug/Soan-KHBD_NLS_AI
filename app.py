@@ -19,10 +19,8 @@ st.caption(
 )
 
 # Lấy API Key từ Secrets
-api_key = st.secrets.get("GEMINI_API_KEY", "")
-
-if api_key:
-    genai.configure(api_key=api_key)
+raw_api_key = st.secrets.get("GEMINI_API_KEY", "")
+api_key = str(raw_api_key).strip().strip('"').strip("'")
 
 # GIAO DIỆN NHẬP THÔNG TIN
 st.subheader("1. Thông tin chung bài dạy")
@@ -107,69 +105,84 @@ with col_tc2:
 if st.button("🚀 SOẠN GIÁO ÁN TÍCH HỢP TỰ ĐỘNG", type="primary"):
     if not api_key:
         st.error(
-            "Chưa phát hiện API Key trong phần Secrets! Vui lòng kiểm tra lại"
-            " cấu hình."
+            "Chưa cấu hình GEMINI_API_KEY trong phần Secrets trên Streamlit!"
         )
     else:
         with st.spinner("AI đang soạn thảo Kế hoạch bài dạy chi tiết..."):
-            prompt = f"""
-            Hãy đóng vai là Giáo viên giỏi môn {mon}. Soạn Kế hoạch bài dạy (Giáo án) theo CV 5512, tích hợp Giáo dục AI (QĐ 2422 & CV 5588).
-            
-            THÔNG TIN BÀI DẠY:
-            - Trường: {truong} | Tổ: {to} | GV: {gv}
-            - Tên bài: {ten_bai} | Lớp: {lop} | Thời lượng: {thoi_luong} | Bộ sách: {sach}
-            - Đặc điểm lớp: {so_hs} HS ({gioi}% Giỏi, {kha}% Khá, {tb}% TB, {yeu}% Yếu. {'Có 1 HS khuyết tật hòa nhập' if hs_khuyet_tat else ''}).
-            - Công nghệ số: {', '.join(cn_su_dung)}
-            - Tích hợp AI: {', '.join(ai_tich_hop)}
-            
-            MỤC TIÊU BÀI HỌC (YÊU CẦU CẦN ĐẠT CUNG CẤP CHÍNH XÁC):
-            {custom_objectives_text if use_custom_objectives else 'Tự đề xuất mục tiêu chuẩn theo GDPT 2018'}
-            
-            YÊU CẦU CẤU TRÚC GIÁO ÁN:
-            I. MỤC TIÊU (Giữ chuẩn mục tiêu đã cung cấp, bổ sung chi tiết Năng lực đặc thù, Năng lực chung, Năng lực số/AI và Phẩm chất)
-            II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU (GV & HS)
-            III. TIẾN TRÌNH DẠY HỌC (Đủ 4 hoạt động: Mở đầu, Hình thành kiến thức, Luyện tập - bám sát SGK, Vận dụng tích hợp AI/Google Maps). Mỗi hoạt động trình bày rõ ràng 4 bước: Bước 1 Chuyển giao, Bước 2 Thực hiện, Bước 3 Báo cáo, Bước 4 Kết luận.
-            """
+            try:
+                genai.configure(api_key=api_key)
 
-            # Sửa model thành gemini-1.5-flash chuẩn
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            response = model.generate_content(prompt)
-            plan_text = response.text
+                prompt = f"""
+Hãy đóng vai là Giáo viên giỏi môn {mon}. Soạn Kế hoạch bài dạy (Giáo án) theo CV 5512, tích hợp Giáo dục AI (QĐ 2422 & CV 5588).
 
-            st.success(" Soạn giáo án hoàn tất!")
-            st.markdown(plan_text)
+THÔNG TIN BÀI DẠY:
+- Trường: {truong} | Tổ: {to} | GV: {gv}
+- Tên bài: {ten_bai} | Lớp: {lop} | Thời lượng: {thoi_luong} | Bộ sách: {sach}
+- Đặc điểm lớp: {so_hs} HS ({gioi}% Giỏi, {kha}% Khá, {tb}% TB, {yeu}% Yếu. {'Có 1 HS khuyết tật hòa nhập' if hs_khuyet_tat else ''}).
+- Công nghệ số: {', '.join(cn_su_dung)}
+- Tích hợp AI: {', '.join(ai_tich_hop)}
 
-            # TẠO FILE WORD ĐỂ TẢI VỀ
-            doc = docx.Document()
-            table = doc.add_table(rows=1, cols=2)
-            hdr_cells = table.rows[0].cells
-            hdr_cells[0].text = f"TRƯỜNG: {truong.upper()}\nTỔ: {to.upper()}"
-            hdr_cells[1].text = (
-                f"NGÀY SOẠN: {ngay_soan.strftime('%d/%m/%Y')}\nGV: {gv.upper()}"
-            )
+MỤC TIÊU BÀI HỌC (YÊU CẦU CẦN ĐẠT CUNG CẤP CHÍNH XÁC):
+{custom_objectives_text if use_custom_objectives else 'Tự đề xuất mục tiêu chuẩn theo GDPT 2018'}
 
-            p_title = doc.add_paragraph()
-            p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run_title = p_title.add_run(f"\nTÊN BÀI DẠY: {ten_bai.upper()}\n")
-            run_title.bold = True
-            run_title.font.size = Pt(14)
+YÊU CẦU CẤU TRÚC GIÁO ÁN:
+I. MỤC TIÊU (Giữ chuẩn mục tiêu đã cung cấp, bổ sung chi tiết Năng lực đặc thù, Năng lực chung, Năng lực số/AI và Phẩm chất)
+II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU (GV & HS)
+III. TIẾN TRÌNH DẠY HỌC (Đủ 4 hoạt động: Mở đầu, Hình thành kiến thức, Luyện tập - bám sát SGK, Vận dụng tích hợp AI/Google Maps). Mỗi hoạt động trình bày rõ ràng 4 bước: Bước 1 Chuyển giao, Bước 2 Thực hiện, Bước 3 Báo cáo, Bước 4 Kết luận.
+""".strip()
 
-            p_sub = doc.add_paragraph(
-                f"Môn học: {mon}; Lớp: {lop} ({thoi_luong})\n"
-            )
-            p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                model = genai.GenerativeModel("gemini-1.5-flash")
+                response = model.generate_content(prompt)
+                plan_text = response.text
 
-            doc.add_paragraph(plan_text)
+                st.success(" Soạn giáo án hoàn tất!")
+                st.markdown(plan_text)
 
-            bio = io.BytesIO()
-            doc.save(bio)
+                # TẠO FILE WORD ĐỂ TẢI VỀ
+                doc = docx.Document()
+                table = doc.add_table(rows=1, cols=2)
+                hdr_cells = table.rows[0].cells
+                hdr_cells[0].text = f"TRƯỜNG: {truong.upper()}\nTỔ: {to.upper()}"
+                hdr_cells[1].text = (
+                    f"NGÀY SOẠN: {ngay_soan.strftime('%d/%m/%Y')}\nGV:"
+                    f" {gv.upper()}"
+                )
 
-            st.download_button(
-                label="📥 TẢI FILE WORD (.DOCX) VỀ MÁY TÍNH",
-                data=bio.getvalue(),
-                file_name=f"GiaoAn_{ten_bai.replace(' ', '_')}.docx",
-                mime=(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                ),
-                type="primary",
-            )
+                p_title = doc.add_paragraph()
+                p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                run_title = p_title.add_run(
+                    f"\nTÊN BÀI DẠY: {ten_bai.upper()}\n"
+                )
+                run_title.bold = True
+                run_title.font.size = Pt(14)
+
+                p_sub = doc.add_paragraph(
+                    f"Môn học: {mon}; Lớp: {lop} ({thoi_luong})\n"
+                )
+                p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+                doc.add_paragraph(plan_text)
+
+                bio = io.BytesIO()
+                doc.save(bio)
+
+                st.download_button(
+                    label="📥 TẢI FILE WORD (.DOCX) VỀ MÁY TÍNH",
+                    data=bio.getvalue(),
+                    file_name=f"GiaoAn_{ten_bai.replace(' ', '_')}.docx",
+                    mime=(
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    ),
+                    type="primary",
+                )
+            except Exception as e:
+                st.error(
+                    f"Có lỗi xảy ra khi kết nối với Gemini API. Chi tiết:"
+                    f" {str(e)}"
+                )
+                st.info(
+                    "💡 Hướng dẫn sửa: Hãy kiểm tra lại phần Secrets trên"
+                    " Streamlit Cloud. Đảm bảo GEMINI_API_KEY bắt đầu bằng"
+                    " 'AIzaSy...' được lấy từ Google AI Studio"
+                    " (aistudio.google.com)."
+                )
